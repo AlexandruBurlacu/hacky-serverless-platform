@@ -1,0 +1,1 @@
+That's a simple file-based key value database, a la git's object db.
