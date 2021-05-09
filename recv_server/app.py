@@ -30,5 +30,5 @@ async def root():
 @app.post("/webhook")
 async def register(event: WebHookEvent):
     data = jsonable_encoder(event)
-    db.put(event, data)
+    db.put(f"{data}", data)
     return {"status": "ok"}, 202
