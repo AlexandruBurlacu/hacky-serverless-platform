@@ -44,6 +44,7 @@ class KVDB:
 
             data = self.index.read_text().splitlines()
             data.append(key)
+            data = list(set(data))
             data.sort()
             self.index.write_text("\n".join(data))
         except Exception as ex:
