@@ -8,6 +8,7 @@ authors = ["Alex Burlacu <alexburlacu1996@gmail.com>"]
 python = "^3.8"
 fastapi = "^0.64.0"
 pika = "^1.2.0"
+uvicorn = "^0.13.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
