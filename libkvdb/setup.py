@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='libkvdb',
-      version='0.2.1',
+      version='0.3.0',
       py_modules=['kvdb'],
       author="Alex Burlacu",
       author_email="alexburlacu1996@gmail.com",
