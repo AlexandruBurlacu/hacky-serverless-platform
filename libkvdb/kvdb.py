@@ -11,6 +11,9 @@ import pickle
 
 import logging
 
+from threading import Lock
+import bisect
+
 #-------
 
 def serialize(value):
@@ -43,9 +46,8 @@ class KVDB:
             value_file.write_bytes(serialize(value))
 
             data = self.index.read_text().splitlines()
-            data.append(key)
-            data = list(set(data))
-            data.sort()
+            if key not in data:
+                bisect.insort(data, key)
             self.index.write_text("\n".join(data))
         except Exception as ex:
             logging.warning(ex)
