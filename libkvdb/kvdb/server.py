@@ -3,7 +3,7 @@ from twisted.protocols import basic
 
 import glob
 
-import kvdb
+from .kvdb import KVDB
 
 import logging
 
@@ -23,10 +23,10 @@ class Command:
     def parse(cls, command):
         resp = {True: None,
                 command == "LIST": ListCommand,
-                glob.fnmatch.fnmatch(command, "GET *"): GetCommand,
-                glob.fnmatch.fnmatch(command, "PUT *"): PutCommand,
-                glob.fnmatch.fnmatch(command, "DEL *"): DeleteCommand,
-                glob.fnmatch.fnmatch(command, "LIST ONLY *"): ListPredicateCommand
+                glob.fnmatch.fnmatch(command, "GET|*"): GetCommand,
+                glob.fnmatch.fnmatch(command, "PUT|*"): PutCommand,
+                glob.fnmatch.fnmatch(command, "DEL|*"): DeleteCommand,
+                glob.fnmatch.fnmatch(command, "LIST ONLY|*"): ListPredicateCommand
                 }[True]
         if not resp:
             raise NameError("No such command")
@@ -37,7 +37,7 @@ class GetCommand(Command):
     def __init__(self, command):
         super().__init__(command)
         self._op_name = "get_by_key"
-        self._key = self._command_raw.split()[-1]
+        self._key = self._command_raw.split("|")[1]
     
     def execute(self, factory):
         return super().execute(factory)(self._key)
@@ -47,8 +47,8 @@ class PutCommand(Command):
     def __init__(self, command):
         super().__init__(command)
         self._op_name = "put_key_value"
-        self._key = self._command_raw.split()[-2]
-        self._value = self._command_raw.split()[-1]
+        self._key = self._command_raw.split("|")[-2]
+        self._value = self._command_raw.split("|")[-1]
 
     
     def execute(self, factory):
@@ -59,7 +59,7 @@ class DeleteCommand(Command):
     def __init__(self, command):
         super().__init__(command)
         self._op_name = "delete_by_key"
-        self._key = self._command_raw.split()[-1]
+        self._key = self._command_raw.split("|")[-1]
     
     def execute(self, factory):
         return super().execute(factory)(self._key)
@@ -79,7 +79,7 @@ class ListPredicateCommand(Command):
         super().__init__(command)
         self._op_name = "list_keys"
 
-        self._predicate = self._command_raw.split(" ")[-1]
+        self._predicate = self._command_raw.split("|")[-1]
 
     def execute(self, factory):
         return super().execute(factory)(self._predicate)
@@ -99,8 +99,10 @@ class KVDBProtocol(basic.LineReceiver):
         resp.addErrback(onError)
 
         def writeResponse(resp):
-            self.transport.write(f"{resp}".encode() + b"\r\n")
-            self.transport.loseConnection()
+            resp = str(resp)
+            size = f"{len(resp)}".zfill(6) # 100_000 chars max
+            self.transport.write(f"{size}{resp}".encode() + b"\r\n")
+            # self.transport.loseConnection()
 
         resp.addCallback(writeResponse)
 
@@ -110,7 +112,7 @@ class KVDBFactory(protocol.ServerFactory):
 
     def __init__(self, db_name):
         self._db_name = db_name
-        self._db = kvdb.KVDB(self._db_name)
+        self._db = KVDB(self._db_name)
 
     def get_by_key(self, key):
         return defer.succeed(self._db.get(key))
@@ -125,11 +127,11 @@ class KVDBFactory(protocol.ServerFactory):
 
     def delete_by_key(self, key):
         return defer.succeed(self._db.delete(key))
-        # return utils.getProcessOutput(b"KVDB", [user])
+
 
 if __name__ == "__main__":
-    fingerEndpoint = endpoints.serverFromString(reactor, "tcp:2026") # 0x7ea = tea
-    fingerEndpoint.listen(KVDBFactory("/tmp/kvdb"))
+    server = endpoints.serverFromString(reactor, "tcp:2026") # 0x7ea = tea
+    server.listen(KVDBFactory("/tmp/kvdb"))
 
     logging.info("KVDB Server started")
 

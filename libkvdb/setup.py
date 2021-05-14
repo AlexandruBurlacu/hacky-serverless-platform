@@ -1,8 +1,8 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='libkvdb',
-      version='0.3.0',
-      py_modules=['kvdb'],
+      version='0.4.5',
+      packages=find_packages(),
       author="Alex Burlacu",
       author_email="alexburlacu1996@gmail.com",
       options={"bdist_wheel": {"universal": True}}

@@ -4,14 +4,14 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.encoders import jsonable_encoder
 
-from kvdb import KVDB
+from kvdb.client import KVDBClient
 
 import json
 
 
 app = FastAPI()
 
-db = KVDB("/tmp/kvdb2")
+db = KVDBClient()
 
 
 class WebHookEvent(BaseModel):
