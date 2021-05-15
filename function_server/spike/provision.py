@@ -11,8 +11,11 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 
+from kvdb import KVDBClient
+
 app = FastAPI()
-client = docker.from_env()
+docker_client = docker.from_env()
+kvdb_client = KVDBClient()
 
 
 FUNCTION_STORAGE_DIR = pathlib.Path(os.environ.get("FUNCS_STORAGE_DIR_HOST", "/tmp/func-temp-storage"))
@@ -22,36 +25,57 @@ MODULE_CACHE_DIR = "/home/alexburlacu/Experiments/serverless/function_server/bui
 
 
 class CodeSubmission(BaseModel):
-    input_data: str
+    event_type: str
     code: str
 
 
-@app.post("/run-serverless")
-def run_serverless(code_submission: CodeSubmission):
-    tempdir_name = uuid.uuid4()
-    setup_string = f"export PYTHONPATH=$PYTHONPATH:/tmp/{tempdir_name}/site-packages;"
-    container_name = "python:3.6-alpine"
+class Event(BaseModel):
+    input_data: str
+    event_type: str
 
+
+@app.post("/submit-serverless")
+def submit_serverless(code_submission: CodeSubmission):
+    tempdir_name = uuid.uuid4()
     function_location_host = FUNCTION_STORAGE_DIR / pathlib.Path(str(tempdir_name) + "-func.py")
     function_location_host.write_text(code_submission.code)
+    # also save the event type
+    kvdb_client.put(f"{code_submission.event_type}:{tempdir_name}", function_location_host.as_posix())
 
-    volumes={
-        function_location_host.as_posix(): {"bind": f"/tmp/{tempdir_name}/function.py", "mode": "ro"},
-        MODULE_CACHE_DIR: {"bind": f"/tmp/{tempdir_name}/site-packages", "mode": "ro"}
+    return {"status": "ok"}
+
+
+@app.get("/get-serverless-instance/:cid")
+def get_serverless(cid: str):
+    return docker_client.containers.get(cid) # it works, all good, just make it reacher
+
+
+@app.post("/trigger-serverless")
+def run_serverless(event: Event):
+    container_refs = []
+    for serverless_id in kvdb_client.list_only(f"{event.event_type}:*"):
+        tempdir_name = serverless_id.split(":")[1]
+        setup_string = f"export PYTHONPATH=$PYTHONPATH:/tmp/{tempdir_name}/site-packages;"
+        container_name = "python:3.6-alpine"
+
+        function_location_host = kvdb_client.get(serverless_id)
+
+        volumes={
+            function_location_host: {"bind": f"/tmp/{tempdir_name}/function.py", "mode": "ro"},
+            MODULE_CACHE_DIR: {"bind": f"/tmp/{tempdir_name}/site-packages", "mode": "ro"}
         }
 
-    resource_constraints = {"cpu_shares": 2, "mem_limit": "256mb", "pids_limit": 10}
+        resource_constraints = {"cpu_shares": 2, "mem_limit": "256mb", "pids_limit": 10}
 
-    command = f"sh -c '{setup_string} python /tmp/{tempdir_name}/function.py'"
-    container_logs = client.containers.run(container_name, command,
-                                        remove=True, volumes=volumes,
-                                        environment=[f"INPUT_DATA={code_submission.input_data}"],
-                                        detach=False, stderr=True, stdout=True,
-                                        **resource_constraints)
+        command = f"sh -c '{setup_string} python /tmp/{tempdir_name}/function.py'"
+        container_ref = docker_client.containers.run(container_name, command,
+                                            remove=True, volumes=volumes,
+                                            environment=[f"INPUT_DATA={event.input_data}"],
+                                            detach=True, stderr=True, stdout=True,
+                                            **resource_constraints)
+        container_refs.append(container_ref.id)
 
-    function_location_host.unlink()
-
-    return {"status": "success", "logs": container_logs}
+    return {"status": "success", "ids": container_refs}
 
 
 # docker run
