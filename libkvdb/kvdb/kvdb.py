@@ -62,4 +62,4 @@ class KVDB:
 
             index = self.index.read_text().splitlines()
             index.remove(key)
-            self.index.write_text("".join(index))
+            self.index.write_text("\n".join(index))
