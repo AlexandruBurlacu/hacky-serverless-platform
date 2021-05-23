@@ -14,4 +14,6 @@ First only STDLIB, later add core libs, like `requests` and `aiohttp`.
 - **[Done]** CRUD operations on serverless submissions and invocations
 - **[Done]** Make logs work
 - Kill a function after some time (1 min for example) - https://dev.to/jmarhee/managing-running-container-lifetimes-with-the-docker-python-sdk-ono
-- Multi-tenant
+- Multi-tenant (users, roles, filter-by-user/owner)
+- Docker instance-pool and reuse these (could requre security hardening)
+- UI
