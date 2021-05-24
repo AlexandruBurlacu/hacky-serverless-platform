@@ -1,22 +1,19 @@
 <template>
-  <div class="container">
+  <div class="container-fluid">
     <h3> ServerlessSubmissions Page says: "{{ msg }}"</h3>
     <h5>Submissions status is {{ submissions.status }}</h5>
     <table class="table">
       <thead>
         <tr>
           <th scope="col">Id</th>
-          <!-- <th scope="col">Name</th>
-          <th scope="col">City</th>
-          <th scope="col">Email</th> -->
         </tr>
       </thead>
       <tbody>
         <tr v-for="submission in submissions.serverless_ids" v-bind:key="submission.serverless_ids">
           <th scope="row">{{ submission }}</th>
-          <!-- <td>{{ submission.name }}</td>
-          <td>{{ submission.address.city }}</td>
-          <td>{{ submission.email }}</td> -->
+          <td>
+            <button type="button" class="btn btn-primary" v-on:click="deleteSubmission(submission)">Delete it?</button>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -43,6 +40,19 @@
     },
     props: {
       msg: String
+    },
+    methods: {
+      deleteSubmission(sub) {
+        console.log(sub)
+        axios.delete(`http://localhost:7000/serverless/${sub}`,
+                    {
+                      headers: {
+                        "Content-Type": "application/json"
+                      }
+                    })
+        .then(console.log)
+        .catch(console.error);
+      }
     }
   }
 </script>

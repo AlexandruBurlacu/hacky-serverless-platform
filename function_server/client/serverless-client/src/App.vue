@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <ServerlessSubmissions msg="Welcome to a hacky Serverless Platform"/>
+
     <Editor/>
   </div>
 </template>
@@ -19,6 +20,7 @@ export default {
     Editor
   }
 }
+
 </script>
 
 <style>

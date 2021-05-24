@@ -1,11 +1,24 @@
 <template>
-  <div>
-    <prism-editor class="serverless-editor" v-model="code" :highlight="highlighter" line-numbers></prism-editor>
-    <button type="button" class="btn btn-primary" v-on:click="sendCode">Submit serverless code</button>
+  <div class="container">
+    <form>
+      <div class="form-group">
+        <label for="serverless-code">Serverless Code</label>
+        <prism-editor class="serverless-editor" v-model="code" :highlight="highlighter" line-numbers></prism-editor>
+      </div>
+      <div class="form-group">
+        <label for="event-type">Event Type (which will trigger the code)</label>
+        <input type="text" class="form-control" id="event-type" v-model="event_type">
+      </div>
+      <button type="button" class="btn btn-primary" v-on:click="sendCode">Submit serverless code</button>
+    </form>
+    
   </div>
+
 </template>
 
 <script>
+  import _ from 'lodash';
+
   // import Prism Editor
   import { PrismEditor } from 'vue-prism-editor';
   import 'vue-prism-editor/dist/prismeditor.min.css'; // import the styles somewhere
@@ -22,13 +35,14 @@
     components: {
       PrismEditor,
     },
-    data: () => ({ code: '\n\n\n' }),
+    data: () => ({ code: '\n\n\n', event_type: "any" }),
     methods: {
       highlighter(code) {
         return highlight(code, languages.python); // languages.<insert language> to return html with markup
       },
       sendCode() {
         console.log(this.code)
+        console.log(this.event_type)
         axios.post("http://localhost:7000/serverless",
                     {event_type: "any", code: this.code}, {
                       headers: {
@@ -36,7 +50,11 @@
                       }
                     })
         .then(console.log)
-        .catch(console.error);
+        .catch(err => {
+          console.error(err);
+          const r = _.range(1, 10);
+          console.log(r);
+        });
       }
     },
   };
