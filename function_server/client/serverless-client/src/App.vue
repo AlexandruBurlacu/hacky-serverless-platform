@@ -3,13 +3,15 @@
     <ServerlessSubmissions msg="Welcome to a hacky Serverless Platform"/>
 
     <Editor/>
+
+    <TriggerInstances/>
   </div>
 </template>
 
 <script>
-// import HelloWorld from './components/HelloWorld.vue'
 import ServerlessSubmissions from './components/ServerlessSubmissions.vue'
 import Editor from './components/Editor.vue'
+import TriggerInstances from './components/TriggerInstances.vue'
 
 // https://vuejs.org/v2/guide/
 
@@ -17,7 +19,8 @@ export default {
   name: 'App',
   components: {
     ServerlessSubmissions,
-    Editor
+    Editor,
+    TriggerInstances
   }
 }
 

@@ -1,6 +1,6 @@
 <template>
   <div class="container-fluid">
-    <h3> ServerlessSubmissions Page says: "{{ msg }}"</h3>
+    <h3>Serverless Submissions Page says: "{{ msg }}"</h3>
     <h5>Submissions status is {{ submissions.status }}</h5>
     <table class="table">
       <thead>

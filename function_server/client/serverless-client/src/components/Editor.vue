@@ -17,8 +17,6 @@
 </template>
 
 <script>
-  import _ from 'lodash';
-
   // import Prism Editor
   import { PrismEditor } from 'vue-prism-editor';
   import 'vue-prism-editor/dist/prismeditor.min.css'; // import the styles somewhere
@@ -44,17 +42,13 @@
         console.log(this.code)
         console.log(this.event_type)
         axios.post("http://localhost:7000/serverless",
-                    {event_type: "any", code: this.code}, {
+                    {event_type: this.event_type, code: this.code}, {
                       headers: {
                         "Content-Type": "application/json"
                       }
                     })
         .then(console.log)
-        .catch(err => {
-          console.error(err);
-          const r = _.range(1, 10);
-          console.log(r);
-        });
+        .catch(console.error);
       }
     },
   };
