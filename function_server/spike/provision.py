@@ -1,6 +1,7 @@
 import docker
 import pathlib
 import uuid
+import hashlib
 import time
 import os
 import json
@@ -36,6 +37,9 @@ kvdb_client = KVDBClient()
 
 FUNCTION_STORAGE_DIR = pathlib.Path(os.environ.get("FUNCS_STORAGE_DIR_HOST", "/tmp/func-temp-storage"))
 FUNCTION_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+
+FUNCTION_OUTPUTS_DIR = pathlib.Path(os.environ.get("FUNCS_OUTPUTS_DIR_HOST", "/tmp/func-temp-out"))
+FUNCTION_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
 MODULE_CACHE_DIR = "/home/alexburlacu/Experiments/serverless/function_server/builder/site-packages/"
 
@@ -93,15 +97,10 @@ def submit_serverless_code(code_submission: CodeSubmission):
 
 @app.get("/serverless/instance/{instance_id}/logs")
 def get_serverless_instance_logs(instance_id: str = Path(...)):
-    container = docker_client.containers.get(instance_id)
-    return container.logs()
-
-
-@app.get("/serverless/instance/{instance_id}/stats")
-def get_serverless_instance_stats(instance_id: str = Path(...)):
-    container = docker_client.containers.get(instance_id)
-    return {instance_id: json.loads(list(container.stats())[0])}
-
+    function_logs_dir = os.path.join(FUNCTION_OUTPUTS_DIR, instance_id, "logs")
+    out = pathlib.Path(function_logs_dir) / "out.log"
+    err = pathlib.Path(function_logs_dir) / "err.log"
+    return {"outputs": out.read_text(), "stderr": err.read_text()}
 
 
 @app.post("/serverless/instance")
@@ -114,9 +113,15 @@ def run_serverless_instance_on_event(event: Event):
 
         function_location_host = kvdb_client.get(serverless_id)
 
+
+        unique_name = hashlib.sha1(f"{tempdir_name}:{time.time()}".encode()).hexdigest()
+        function_logs_dir = os.path.join(FUNCTION_OUTPUTS_DIR, unique_name, "logs")
+        os.makedirs(function_logs_dir, exist_ok=True)
+
         volumes={
             function_location_host: {"bind": f"/tmp/{tempdir_name}/function.py", "mode": "ro"},
-            MODULE_CACHE_DIR: {"bind": f"/tmp/{tempdir_name}/site-packages", "mode": "ro"}
+            MODULE_CACHE_DIR: {"bind": f"/tmp/{tempdir_name}/site-packages", "mode": "ro"},
+            function_logs_dir: {"bind": f"/tmp/{tempdir_name}/logs"}
         }
 
         resource_constraints = {"cpu_shares": 2, "mem_limit": "256mb", "pids_limit": 10}
@@ -127,13 +132,13 @@ def run_serverless_instance_on_event(event: Event):
                                             })
         # hc = client.create_host_config(log_config=lc)
 
-        command = f"sh -c '{setup_string} python -u /tmp/{tempdir_name}/function.py'" # maybe logs are missing because of this
+        command = f"sh -c '{setup_string} python -u /tmp/{tempdir_name}/function.py > /tmp/{tempdir_name}/logs/out.log 2>> /tmp/{tempdir_name}/logs/err.log'"
         container_ref = docker_client.containers.run(container_name, command,
-                                            remove=True, volumes=volumes,
+                                            remove=True, volumes=volumes, name=unique_name,
                                             environment=[f"INPUT_DATA={event.input_data}"],
                                             detach=True, stderr=True, stdout=True, log_config=log_config,
                                             **resource_constraints)
-        instance_refs.append(container_ref.id)
+        instance_refs.append(unique_name)
 
     return {"status": "success", "instance_ids": instance_refs}
 
