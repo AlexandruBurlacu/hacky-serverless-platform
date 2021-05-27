@@ -1,30 +1,13 @@
 <template>
   <div id="app">
-    <ServerlessSubmissions msg="Welcome to a hacky Serverless Platform"/>
-
-    <Editor/>
-
-    <TriggerInstances/>
+    <div id="nav">
+      <router-link to="/">Home</router-link> |
+      <router-link to="/about">About</router-link>
+    </div>
+    <router-view/>
   </div>
 </template>
 
-<script>
-import ServerlessSubmissions from './components/ServerlessSubmissions.vue'
-import Editor from './components/Editor.vue'
-import TriggerInstances from './components/TriggerInstances.vue'
-
-// https://vuejs.org/v2/guide/
-
-export default {
-  name: 'App',
-  components: {
-    ServerlessSubmissions,
-    Editor,
-    TriggerInstances
-  }
-}
-
-</script>
 
 <style>
 #app {
@@ -33,6 +16,18 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+}
+
+#nav {
+  padding: 30px;
+}
+
+#nav a {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+#nav a.router-link-exact-active {
+  color: #42b983;
 }
 </style>

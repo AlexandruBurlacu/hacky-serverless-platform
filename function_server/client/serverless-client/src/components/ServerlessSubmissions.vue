@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid">
+  <div class="container">
     <h3>Serverless Submissions Page says: "{{ msg }}"</h3>
     <h5>Submissions status is {{ submissions.status }}</h5>
     <table class="table">
@@ -12,9 +12,9 @@
       <tbody>
         <tr v-for="submission in submissions.serverless_ids" v-bind:key="submission.serverless_ids">
           <th scope="row">{{ submission }}</th>
-          <td>{{ submission_events[submission] }}</td>
+          <td >{{ submission.split(":")[0] }}</td>
           <td>
-            <button type="button" class="btn btn-primary" v-on:click="deleteSubmission(submission)">Delete it?</button>
+            <button type="button" class="btn btn-danger" v-on:click="deleteSubmission(submission)">Delete it?</button>
           </td>
         </tr>
       </tbody>
@@ -41,43 +41,17 @@
         this.submissions = res.data;
       })
     },
-    // watch: {
-    //   submissions: function(oldVal, newVal) {
-    //     console.log(newVal)
-    //     console.log(oldVal)
-    //     oldVal.forEach(sub => {
-    //       this.getSubmissionEvent(sub);
-    //     })
-    //   },
-    // },
     props: {
-      msg: String
+      instance_id: String
     },
     methods: {
       deleteSubmission(sub) {
-        // console.log(`Deleting ${sub}`)
         axios.delete(`http://localhost:7000/serverless/${sub}`,
                     {
                       headers: {
                         "Content-Type": "application/json"
                       }
                     })
-        // .then(console.log)
-        .catch(console.error);
-      },
-      getSubmissionEvent(sub) {
-        console.log(`Getting Summary of ${sub}`);
-        var vm = this;
-        axios.get(`http://localhost:7000/serverless/${sub}`,
-                    {
-                      headers: {
-                        "Content-Type": "application/json"
-                      }
-                    })    
-        .then((res) => {
-          console.log(res.data.serverless.event_type);
-          vm._submission_events[sub] = res.data.serverless.event_type;
-        })
         .catch(console.error);
       }
     }

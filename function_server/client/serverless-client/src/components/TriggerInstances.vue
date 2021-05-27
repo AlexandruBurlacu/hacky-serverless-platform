@@ -13,6 +13,13 @@
       <button type="button" class="btn btn-primary" v-on:click="sendCode">Trigger serverless code</button>
     </form>
     
+
+    <div v-for="instance in instances" v-bind:key="instance">
+      <div class="alert alert-success" role="alert" ref="alert">
+        Code triggered: Instance ID: <a :href="`/instances/${instance}`">{{ instance }}</a>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -26,7 +33,8 @@
     data: () => {
       return {
         input_data: "",
-        event_type: "any"
+        event_type: "any",
+        instances: null
       };
     },
     methods: {
@@ -39,7 +47,9 @@
                         "Content-Type": "application/json"
                       }
                     })
-        .then(console.log)
+        .then((response) => {
+          this.instances = response.data.instance_ids;
+        })
         .catch(console.error);
       }
     }
