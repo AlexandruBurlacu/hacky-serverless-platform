@@ -131,7 +131,7 @@ def run_serverless_instance_on_event(event: Event):
         # hc = client.create_host_config(log_config=lc)
 
         command = f"sh -c '{setup_string} python -u /tmp/{tempdir_name}/function.py > /tmp/{tempdir_name}/logs/out.log 2>> /tmp/{tempdir_name}/logs/err.log'"
-        container_ref = docker_client.containers.run(container_name, command,
+        container_ref = docker_client.containers.run(container_name, command, network="cloud_net",
                                             remove=True, volumes=volumes, name=unique_name,
                                             environment=[f"INPUT_DATA={event.input_data}"],
                                             detach=True, stderr=True, stdout=True, log_config=log_config,
